@@ -40,6 +40,19 @@ BEATS = (
 
 MAX_CHARS = 200
 
+# Stock punchlines the brief's freshness rule forbids: familiar sayings and
+# punchlines everyone has heard. If any of these appear, the line is not
+# this entry's original joke.
+STOCK_PHRASES = (
+    "my wife",
+    "wi-fi",
+    "autocorrect",
+    "fbi van",
+    "toaster",
+    "screen time",
+    "turn it off and on",
+)
+
 
 def build_line() -> str:
     """Join the beats into the single line the judge reads."""
@@ -62,6 +75,18 @@ def check_line(text: str) -> None:
         raise ValueError(f"line must have exactly 2 beats, got {len(BEATS)}")
     if text.count(".") != 2 or not text.endswith(BEATS[-1][1]):
         raise ValueError("line must end on its payoff beat")
+    # Freshness self-check: no stock punchline may hide in the line, and
+    # the two beats must not repeat a content word — every word earns its
+    # place, and the payoff reframes the setup instead of echoing it.
+    lowered = text.lower()
+    for phrase in STOCK_PHRASES:
+        if phrase in lowered:
+            raise ValueError(f"line uses a stock punchline: {phrase!r}")
+    seen = set()
+    for word in lowered.replace(".", "").split():
+        if word in seen and word not in ("i", "my", "he", "a", "the"):
+            raise ValueError(f"line repeats a content word: {word!r}")
+        seen.add(word)
     text.encode("utf-8")  # must be valid UTF-8 text
 
 
